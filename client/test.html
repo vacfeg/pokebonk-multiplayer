@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PokéBonk Multiplayer · test</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: flex; gap: 4px; }
+  iframe { flex: 1; border: 0; height: 100%; }
+</style>
+</head>
+<body>
+<iframe id="a" title="host"></iframe>
+<iframe id="b" title="cliente"></iframe>
+<script>
+  // Test harness: two game instances side by side (host on the left).
+  document.getElementById('a').src = '/?lan=host';
+  setTimeout(() => { document.getElementById('b').src = '/?lan=client'; }, 2500);
+  window.A = () => document.getElementById('a').contentWindow;
+  window.B = () => document.getElementById('b').contentWindow;
+
+  // The preview pane renders slowly; step the simulation on a timer and draw
+  // only every few frames so game logic runs at a useful speed.
+  window.fast = (w, opts = {}) => {
+    const app = w.__pbApp;
+    if (!app || app.__fast) return;
+    app.__fast = true;
+    const render = app.r.render.bind(app.r);
+    let k = 0;
+    app.r.render = (n) => { if ((k++ % 8) === 0) render(n); };
+    app.halted = true;
+    w.setInterval(() => {
+      try {
+        app.pad.update(1 / 30, app.run?.state === 'play');
+        app.run ? app.run.update(1 / 30) : app.menuScene?.update(1 / 30);
+        app.r.render(1 / 30);
+      } catch (e) { console.error(e); } finally { app.input.endFrame(); }
+      if (opts.autopick && app.run?.state === 'modal') {
+        const card = [...w.document.querySelectorAll('.card.offer')].find((e) => e.offsetParent);
+        if (card && !card.__clicked) { card.__clicked = true; setTimeout(() => card.click(), 300); }
+      }
+    }, 33);
+  };
+  window.god = (w, on = true) => { const r = w.__pbApp.run; if (r) r.godMode = on; };
+</script>
+</body>
+</html>

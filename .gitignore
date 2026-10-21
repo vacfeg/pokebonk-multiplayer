@@ -1,0 +1,12 @@
+# Created at runtime
+node_modules/
+cache/
+data/
+bin/
+
+# Local development
+tools/
+*.log
+*.zip
+.DS_Store
+Thumbs.db
